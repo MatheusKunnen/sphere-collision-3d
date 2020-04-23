@@ -14,7 +14,7 @@ from OpenGL.GLUT import *
 class OpenGLManager:
     """ General parameters """
     display_size = (1400, 800)  # Tamanho da janela a abrir
-    sphere_slices = 16          # Divisioes das bolas (> -> Maior Qualidade)
+    sphere_slices = 12          # Divisioes das bolas (> -> Maior Qualidade)
     text_pos = (10, 750)        # Posicao inicial do texto
     text_dP = 175               # Distancia entre linhas do texto
     D_RENDER_DISTANCE = 100     # Distancia maxima de renderizado
@@ -40,7 +40,7 @@ class OpenGLManager:
     """ Colors """
     COLOR_BLACK = [0., 0., 0., 1.]
     COLOR_WHITE = [1., 1., 1., 1.]
-    cube_color = [1., 0., 0., 1.]                       # Cor do frame do Cubo
+    CUBE_COLOR = [.25, .25, 1., 1.]                       # Cor do frame do Cubo
     vector_color = [1, 1, 1, 1]             # Cor da esfera
     # Cor da sombra da esfera
     sphere_diffuse_color = [.01, .01, .01, 1.]
@@ -51,7 +51,7 @@ class OpenGLManager:
     sphere_collision_ambient_color = [.5, .0,
                                       0., .1]   # Cor ambiente? das bolas
 
-    def __init__(self, display_title, bg_color=COLOR_WHITE):
+    def __init__(self, display_title, bg_color=[1., 1., 1., 1.]):
         self.running = False
         self.display_title = display_title
         self.render_distance = OpenGLManager.D_RENDER_DISTANCE
@@ -201,13 +201,13 @@ class OpenGLManager:
         glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse_color)
         glMaterialfv(GL_FRONT, GL_SPECULAR, self.sphere_specular_color)
         glTranslatef(sphere_pos[0], sphere_pos[1], sphere_pos[2])
-        print(sphere_radius)
         glutSolidSphere(sphere_radius, self.sphere_slices, self.sphere_slices)
         glPopMatrix()
 
-    def draw_cube_frame(self, cube_length, cube_color=cube_color):
+    def draw_cube_frame(self, cube_length, CUBE_COLOR=CUBE_COLOR):
         glPushMatrix()
-        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, cube_color)
+        glLineWidth(5.)
+        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, CUBE_COLOR)
         glTranslatef(0, 0, 0)
         glutWireCube(cube_length)
         glPopMatrix()

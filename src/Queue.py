@@ -17,6 +17,10 @@ class Queue:
         self.n_elements += 1
         return 0 
            
+    def set_elements(self, elements):
+        self.elements = elements
+        self.n_elements = len(elements)
+
     def dequeue(self):
         if not self.is_empty():
             self.elements.pop(0)

@@ -8,12 +8,13 @@ class Graph:
     # General Constansts
     SCALE_K = 0.98
 
-    def __init__(self, title, axes, max_points, g_size, g_pos):
+    def __init__(self, title, axes, max_points, g_size, g_pos, title_type = 1):
         self.title = title
         self.axes = axes
         self.max_points = max_points
         self.g_size = g_size
         self.g_pos = g_pos
+        self.title_type = title_type
         self.points_queue = Queue(self.max_points)
         self.max_v = np.array([0., 0.])
         self.min_v = np.array([0., 0.])
@@ -39,7 +40,7 @@ class Graph:
 
     # Return graph's caption
     def get_caption(self):
-        return f"{self.title} | {round(self.min_v[0],2)} < {self.axes[0]} < {round(self.max_v[0],2)} | {round(self.min_v[1],2)} < {self.axes[1]} < {round(self.max_v[1],2)}"
+        return f"{self.title} | {round(self.min_v[0],2)} < {self.axes[0]} < {round(self.max_v[0],2)} | {round(self.min_v[1],2)} < {self.axes[1]} < {round(self.max_v[1],2)}" if self.title_type == 1 else f"{self.title}"
 
     # Updates min & max values of each axis
     def update_edge_values(self):

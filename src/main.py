@@ -33,7 +33,7 @@ class Main:
         self.is_paused = True
         self.dt = 1/60.0
         self.dt_k = 1.
-        self.target_dt = 1/30.0
+        self.target_dt = 1/20.0
         self.t_total = 0
         self.hud_enabled = True
         self.graphs_enabled = True
@@ -59,14 +59,14 @@ class Main:
         pass
 
     def init_graphs(self):
-        graphs_s = [600, 80]
+        graphs_s = [400, 300]
         graphs_offset = [-10, -20]
         n_points = 1000
         n = 1
-        self.graph_pos = Graph("Pos. [Z] (P x t)", ["t", "P"], n_points, 
+        self.graph_mb_distrib = Graph("Maxwell-Boltzmann Distribution (n x V)", ["n", "V"], n_points, 
                             np.array(graphs_s), 
                             np.array([self.g_manager.display_size[0] - graphs_s[0] +  graphs_offset[0], 
-                            self.g_manager.display_size[1] - n*graphs_s[1] + n*graphs_offset[1]]))
+                            self.g_manager.display_size[1] - n*graphs_s[1] + n*graphs_offset[1]]), 2)
         
 
     def run(self):
@@ -87,25 +87,26 @@ class Main:
         self.draw_hud()
         self.draw_graphs()
         self.collision_manager.draw(self.g_manager)
-        # if self.vector_field_enabled:
-            # self.v_field.draw(self.g_manager)
 
     def draw_graphs(self):
         if not self.graphs_enabled:
             return
-        # self.graph_pos.draw(self.g_manager)
+        self.graph_mb_distrib.draw(self.g_manager)
 
     def update(self):
         self.collision_manager.update(self.dt * self.dt_k)
+        self.update_graphs()
 
     def update_graphs(self):
-        pass
-        # self.graph_pos.put(np.array([float(self.t_total), float(self.body.b_pos[2])]))
+        self.graph_mb_distrib.points_queue.set_elements(self.collision_manager.get_mb_dist())
+        # self.graph_mb_distrib.put(np.array([float(self.t_total), float(self.body.b_pos[2])]))
 
     def draw_hud(self):
         if not self.hud_enabled:
             return
         txt_status = "Paused" if self.is_paused else "Running"
+        k_v = self.collision_manager.get_k_v()
+        k = self.collision_manager.norm(k_v)
         self.g_manager.captions = [
             "-> General Parameters",
             f"    FPS: {round(1/self.dt,0)}",
@@ -113,7 +114,14 @@ class Main:
             f"   Play: x{round(self.dt_k,1)}",
             f"Cam. dP: {np.round(self.cam_pos, 2)}",
             f"Cam. dR: {np.round(self.cam_rot, 2)}",
-            f" Status: {txt_status}", ""]
+            f" Status: {txt_status}", "",
+            "-> Simulation Parameters",
+            f"N. Spheres: {self.collision_manager.n_bodies}",
+            f"V_med: {np.round(self.collision_manager.get_v_med(), 3)}",
+            f"V_med: {np.round(self.collision_manager.norm(self.collision_manager.get_v_med()), 3)}",
+            f"V_rms: {round(self.collision_manager.get_v_rms(), 3)}",
+            f"  K_v: {np.round(k_v, 3)}",
+            f"    K: {round(k, 3)}"]
         self.g_manager.draw_captions()
 
     def update_dt(self, t1, t2):
