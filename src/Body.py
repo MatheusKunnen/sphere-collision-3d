@@ -14,6 +14,12 @@ class Body:
         for i in range(0, len(k_v)):
             k_v[i] += pow(self.b_vel[i], 2)/2
         return k_v
+    
+    def get_k(self):
+        k = 0.
+        for val in self.b_vel:
+            k += pow(val, 2)
+        return k
 
     def update(self, dt):
         self.b_collisioned = False

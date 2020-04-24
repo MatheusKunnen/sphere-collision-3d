@@ -14,7 +14,7 @@ from OpenGL.GLUT import *
 
 from OpenGLManager import OpenGLManager
 from Graph import Graph
-from CollisionManager import CollisionManager
+from SimulationManager import SimulationManager
 
 
 class Main:
@@ -38,18 +38,19 @@ class Main:
         self.hud_enabled = True
         self.graphs_enabled = True
         self.vector_field_enabled = False
+        self.spheres_g_enabled = True
         
         # Init Graphics Manager
         self.g_manager = OpenGLManager("3D Sphere Collision Simulator | Matheus Kunnen ")
         self.move_vector = np.array([0., 0., 0.])
         self.rot_vector = np.array([0., 0., 0.])
-        self.cam_pos = np.array([0., 20., -5.])
+        self.cam_pos = np.array([5., 26., -5.])
         self.cam_rot = np.array([-40., 0., 0.])
         self.g_manager.cam_pos = self.cam_pos
         self.g_manager.cam_rot = self.cam_rot
 
         # Init Collision Manager & Bodies
-        self.collision_manager = CollisionManager()
+        self.s_manager = SimulationManager()
 
         # Init Graphs
         self.init_graphs()
@@ -59,13 +60,13 @@ class Main:
         pass
 
     def init_graphs(self):
-        graphs_s = [400, 300]
-        graphs_offset = [-10, -20]
+        graphs_s = [500, 300]
+        graphs_offset = [20, -self.g_manager.display_size[1] + graphs_s[1] + 20]
         n_points = 1000
         n = 1
         self.graph_mb_distrib = Graph("Maxwell-Boltzmann Distribution (n x V)", ["n", "V"], n_points, 
                             np.array(graphs_s), 
-                            np.array([self.g_manager.display_size[0] - graphs_s[0] +  graphs_offset[0], 
+                            np.array([graphs_offset[0], 
                             self.g_manager.display_size[1] - n*graphs_s[1] + n*graphs_offset[1]]), 2)
         
 
@@ -86,7 +87,8 @@ class Main:
     def draw(self):
         self.draw_hud()
         self.draw_graphs()
-        self.collision_manager.draw(self.g_manager)
+        if self.spheres_g_enabled:
+            self.s_manager.draw(self.g_manager)
 
     def draw_graphs(self):
         if not self.graphs_enabled:
@@ -94,19 +96,19 @@ class Main:
         self.graph_mb_distrib.draw(self.g_manager)
 
     def update(self):
-        self.collision_manager.update(self.dt * self.dt_k)
+        self.s_manager.update(self.target_dt * self.dt_k)
         self.update_graphs()
 
     def update_graphs(self):
-        self.graph_mb_distrib.points_queue.set_elements(self.collision_manager.get_mb_dist())
+        self.graph_mb_distrib.points_queue.set_elements(self.s_manager.get_mb_dist())
         # self.graph_mb_distrib.put(np.array([float(self.t_total), float(self.body.b_pos[2])]))
 
     def draw_hud(self):
         if not self.hud_enabled:
             return
         txt_status = "Paused" if self.is_paused else "Running"
-        k_v = self.collision_manager.get_k_v()
-        k = self.collision_manager.norm(k_v)
+        k_v = self.s_manager.get_k_v()
+        k = self.s_manager.norm(k_v)
         self.g_manager.captions = [
             "-> General Parameters",
             f"    FPS: {round(1/self.dt,0)}",
@@ -116,19 +118,20 @@ class Main:
             f"Cam. dR: {np.round(self.cam_rot, 2)}",
             f" Status: {txt_status}", "",
             "-> Simulation Parameters",
-            f"N. Spheres: {self.collision_manager.n_bodies}",
-            f"V_med: {np.round(self.collision_manager.get_v_med(), 3)}",
-            f"V_med: {np.round(self.collision_manager.norm(self.collision_manager.get_v_med()), 3)}",
-            f"V_rms: {round(self.collision_manager.get_v_rms(), 3)}",
-            f"  K_v: {np.round(k_v, 3)}",
-            f"    K: {round(k, 3)}"]
+            f"N. Spheres: {self.s_manager.n_bodies}",
+            f"V_med: {np.round(self.s_manager.get_v_med(), 3)}",
+            f"V_med: {np.round(self.s_manager.norm(self.s_manager.get_v_med()), 3)}",
+            f"V_rms: {round(self.s_manager.get_v_rms(), 30)}",
+            f"  K_v: {np.round(k_v, 30)}",
+            f"    K: {round(self.s_manager.get_k(), 30)}"]
         self.g_manager.draw_captions()
 
     def update_dt(self, t1, t2):
         self.dt = t2 - t1
         self.t_total += self.dt if not self.is_paused else 0.
         if self.dt > self.target_dt:
-            print(f"FPS {round(1/self.dt,1)} | {round((self.dt - self.target_dt)/self.target_dt,1)} frames missed")
+            pass
+            #print(f"FPS {round(1/self.dt,1)} | {round((self.dt - self.target_dt)/self.target_dt,1)} frames missed")
         else:
             self.g_manager.wait(self.target_dt - self.dt)
 
@@ -168,6 +171,8 @@ class Main:
                     self.is_paused = not self.is_paused
                 elif event.key == pygame.K_g and event.type == pygame.KEYDOWN:
                     self.graphs_enabled = not self.graphs_enabled
+                elif event.key == pygame.K_r and event.type == pygame.KEYDOWN:
+                    self.spheres_g_enabled = not self.spheres_g_enabled
             if event.type == pygame.QUIT:
                 is_running = False
                 pygame.quit()
