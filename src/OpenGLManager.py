@@ -72,7 +72,7 @@ class OpenGLManager:
             self.display_size, pygame.DOUBLEBUF | HWSURFACE |OPENGL)
         pygame.display.set_caption(self.display_title)
         pygame.display.gl_set_attribute(GL_ACCELERATED_VISUAL, True)
-
+        glutInit()
         # Config window
         glClearColor(self.bg_color[0], self.bg_color[1],
                      self.bg_color[2], self.bg_color[3])
@@ -154,7 +154,7 @@ class OpenGLManager:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     def swap_buffers(self):
-        glutSwapBuffers()
+        #glutSwapBuffers()
         pygame.display.flip()
 
     def wait(self, time):
@@ -234,7 +234,9 @@ class OpenGLManager:
         glutSolidSphere(.02, 6, 6)
         glPopMatrix()
 
-    def draw_2d_graph(self, g_pos, g_size, g_scale, g_min, g_points, caption):
+    def draw_2d_graph(self, g_pos, g_size, g_scale, g_min, g_points, caption, g_color = None):
+        if g_color is None:
+            g_color = self.text_color
         """ Set 2D mode"""
         glMatrixMode(GL_PROJECTION)
         glPushMatrix()
@@ -252,7 +254,7 @@ class OpenGLManager:
         glPushMatrix()
         glTranslatef(g_pos[0], g_pos[1], 0)
         glScalef(1, 1, 1)
-        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, self.text_color)
+        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, g_color)
         glBegin(GL_LINE_STRIP)
         for point in g_points:
             glVertex2d((point[0] - g_min[0])*g_scale[0], (point[1] - g_min[1])*g_scale[1])
