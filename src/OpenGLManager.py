@@ -14,7 +14,7 @@ from OpenGL.GLUT import *
 class OpenGLManager:
     """ General parameters """
     display_size = (1600, 800)  # Tamanho da janela a abrir
-    sphere_slices = 4          # Divisioes das bolas (> -> Maior Qualidade)
+    sphere_slices = 4           # Divisioes das bolas (> -> Maior Qualidade)
     text_pos = (10, 750)        # Posicao inicial do texto
     text_dP = 175               # Distancia entre linhas do texto
     D_RENDER_DISTANCE = 100     # Distancia maxima de renderizado
@@ -72,7 +72,7 @@ class OpenGLManager:
             self.display_size, pygame.DOUBLEBUF | HWSURFACE |OPENGL)
         pygame.display.set_caption(self.display_title)
         pygame.display.gl_set_attribute(GL_ACCELERATED_VISUAL, True)
-        
+
         # Config window
         glClearColor(self.bg_color[0], self.bg_color[1],
                      self.bg_color[2], self.bg_color[3])

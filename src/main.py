@@ -60,15 +60,16 @@ class Main:
         pass
 
     def init_graphs(self):
-        graphs_s = [500, 300]
+        graphs_s = [600, 300]
         graphs_offset = [20, -self.g_manager.display_size[1] + graphs_s[1] + 20]
         n_points = 1000
         n = 1
         self.graph_mb_distrib = Graph("Maxwell-Boltzmann Distribution (n x V)", ["n", "V"], n_points, 
                             np.array(graphs_s), 
-                            np.array([graphs_offset[0], 
-                            self.g_manager.display_size[1] - n*graphs_s[1] + n*graphs_offset[1]]), 2)
-        
+                            np.array([20, 20]), 2)
+        self.graph_mb_distrib_ideal = Graph("Maxwell-Boltzmann Distribution (n x V)", ["n", "V"], n_points, 
+                            np.array(graphs_s), 
+                            np.array([20, 20]), 2)
 
     def run(self):
         self.is_running = self.g_manager.init_display()
@@ -93,25 +94,40 @@ class Main:
     def draw_graphs(self):
         if not self.graphs_enabled:
             return
+        # self.graph_mb_distrib.update_edge_values()
+        # self.graph_mb_distrib.update_scale()
         self.graph_mb_distrib.draw(self.g_manager)
+        # self.graph_mb_distrib_ideal.g_scale = self.graph_mb_distrib.g_scale 
+        # self.graph_mb_distrib_ideal.max_v = self.graph_mb_distrib.max_v 
+        # self.graph_mb_distrib_ideal.min_v = self.graph_mb_distrib.min_v 
+        self.graph_mb_distrib_ideal.draw(self.g_manager)
 
     def update(self):
-        self.s_manager.update(self.target_dt * self.dt_k)
+        self.s_manager.update(self.get_sim_dt())
         self.update_graphs()
 
     def update_graphs(self):
+        self.s_manager.get_mb_dist()
         self.graph_mb_distrib.points_queue.set_elements(self.s_manager.get_mb_dist())
-        # self.graph_mb_distrib.put(np.array([float(self.t_total), float(self.body.b_pos[2])]))
+        self.graph_mb_distrib_ideal.points_queue.set_elements(self.s_manager.get_mb_dist_ideal())
 
     def draw_hud(self):
         if not self.hud_enabled:
             return
         txt_status = "Paused" if self.is_paused else "Running"
-        k_v = self.s_manager.get_k_v()
-        k = self.s_manager.norm(k_v)
+        magnitudes = self.s_manager.get_simulation_m(self.get_sim_dt())
+        pi = magnitudes["p_ideal"]
+        pc = magnitudes["p_calc"]
+        v_med_v = magnitudes["v_med_v"]
+        v_med = magnitudes["v_med"]
+        v_rms = magnitudes["v_rms"]
+        k_v = magnitudes["k_t_axes"]
+        k = magnitudes["k_t"]
+        k_med = magnitudes["k_med"]
+        temperature = magnitudes["temperature"]
         self.g_manager.captions = [
             "-> General Parameters",
-            f"    FPS: {round(1/self.dt,0)}",
+            f"    FPS: {round(1/self.dt,0)} ({round(self.dt*1000, 1)}ms)",
             f"Runtime: {round(self.t_total, 3)}s.",
             f"   Play: x{round(self.dt_k,1)}",
             f"Cam. dP: {np.round(self.cam_pos, 2)}",
@@ -119,11 +135,15 @@ class Main:
             f" Status: {txt_status}", "",
             "-> Simulation Parameters",
             f"N. Spheres: {self.s_manager.n_bodies}",
-            f"V_med: {np.round(self.s_manager.get_v_med(), 3)}",
-            f"V_med: {np.round(self.s_manager.norm(self.s_manager.get_v_med()), 3)}",
-            f"V_rms: {round(self.s_manager.get_v_rms(), 30)}",
-            f"  K_v: {np.round(k_v, 30)}",
-            f"    K: {round(self.s_manager.get_k(), 30)}"]
+            f"V_med: {np.round(v_med_v, 3)}",
+            f"V_med: {np.round(v_med, 3)}",
+            f"V_rms: {round(v_rms, 3)}",
+            f"K_t_v: {np.round(k_v, 3)}",
+            f"  K_t: {round(k, 3)} <{round(k_med, 3)}>",
+            f"   Pi: {round(pi, 3)}",
+            f"    P: {round(pc, 3)}",
+            f"Temp.: {round(temperature, 3)}"]
+
         self.g_manager.draw_captions()
 
     def update_dt(self, t1, t2):
@@ -135,6 +155,8 @@ class Main:
         else:
             self.g_manager.wait(self.target_dt - self.dt)
 
+    def get_sim_dt(self):
+        return self.target_dt * self.dt_k
 
     def check_events(self):
         for event in pygame.event.get():
@@ -174,7 +196,7 @@ class Main:
                 elif event.key == pygame.K_r and event.type == pygame.KEYDOWN:
                     self.spheres_g_enabled = not self.spheres_g_enabled
             if event.type == pygame.QUIT:
-                is_running = False
+                #is_running = False
                 pygame.quit()
                 quit()
         self.cam_pos = [self.cam_pos[0] + self.move_vector[0], self.cam_pos[1] +

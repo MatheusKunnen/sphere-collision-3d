@@ -23,7 +23,7 @@ class Graph:
 
     # Test data in DEBUG
     def test_data(self):
-        for i in range(0, 40):
+        for i in range(0, 400):
           self.put(np.array([i/2., i*i/2.]))
 
     # Add point to graph
