@@ -13,30 +13,32 @@ class SimulationManager:
 
     # General parameters
     D_CUBE_LENGHT = 10.
-    D_K = .5
+    D_K = .01
     MB_ROUND = 0
     SPHERE_NORMAL_COLOR = np.array([.1, .1, .1, 1.])
     SPHERE_NORMAL_DIFFUSE_COLOR = np.array([.5, .5, .5, 1.])
     SPHERE_COLLISION_COLOR = np.array([.1, .01, .01, 1.])
     SPHERE_COLLISION_DIFFUSE_COLOR = np.array([.5, .25, .25, 1.])
 
-    def __init__(self, n_bodies = 4000):
+    def __init__(self, n_bodies = 1500):
         # Ambient Parameters
         self.cube_lenght = SimulationManager.D_CUBE_LENGHT
         self.cube_area = math.pow(self.cube_lenght, 2)
         self.cube_vol = math.pow(self.cube_lenght, 3)
         self.n_bodies = n_bodies
-        self.b_radius = math.sqrt(self.D_CUBE_LENGHT**2 /self.n_bodies) * SimulationManager.D_K
+        self.b_radius = math.pow( 3. * self.cube_lenght**3 * self.D_K / (4. * math.pi * self.n_bodies), 1./3)# math.sqrt(self.D_CUBE_LENGHT**2 /self.n_bodies) * SimulationManager.D_K
         self.limit_d = self.D_CUBE_LENGHT/2. - self.b_radius
         self.min_d = self.b_radius * 2.
         self.vel_limits = np.array([-6., 6.])
         # self.max_vel = self.norm(np.array([self.vel_limits[1], self.vel_limits[1], self.vel_limits[1]]))
         # Simulation Variables
         self.n_wall_collisions = 0
+        self.n_body_body_collisions = 0
         self.n_bodies_collision = 0
         self.dp_wall_bodies = 0.
         self.k_t = 0
         self.max_vel = 0.
+        self.k_temp = 0.
         self.init_bodies()
     
     def init_bodies(self):
@@ -69,14 +71,15 @@ class SimulationManager:
                     dp[1] *= -1
                     p[2] += dp[2]
             count += 1
-        self.max_vel = math.sqrt(self.max_vel/2.)*.10
-        print("N BODIES", len(self.bodies_l), "MAX VEL", self.max_vel)
+        self.max_vel = math.sqrt(self.max_vel/2.)*.20
+        #print("N BODIES", len(self.bodies_l), "MAX VEL", self.max_vel) # DEBUG
     
     def check_collisions(self):
         # Sort bodies (in the "x" axis) for better performance in collision detection
         self.sort_bodies()
         # Reset collision counters
         self.n_wall_collisions = 0
+        self.n_body_body_collisions = 0
         self.n_bodies_collision = 0
         self.dp_wall_bodies = 0.
         # Loop through bodies
@@ -90,10 +93,14 @@ class SimulationManager:
                 r_ab = body_b.b_pos - body_a.b_pos
                 if r_ab[0] <= self.min_d:
                     if self.norm_2(r_ab) <= self.min_d*self.min_d:
+                        self.n_body_body_collisions = self.n_body_body_collisions + 1
                         self.on_collision(body_a, body_b)
                 else:
                     # No more posible collision ("x" axis sorted)
                     break
+            
+            # print(self.n_body_body_collisions) # DEBUG
+
 
     def check_wall_collision(self, body):
         for i in range(0, len(body.b_pos)):
@@ -153,6 +160,7 @@ class SimulationManager:
                       "p_calc":0.,
                       "temperature":0.
                       }
+
         # Calculate magnitudes
         for body in self.bodies_l:
             s_magnitudes["v_med_v"] += body.b_vel
@@ -177,15 +185,31 @@ class SimulationManager:
         # Temperature
         self.k_temp = s_magnitudes["temperature"] = s_magnitudes["k_med"] * 2 / (3*SimulationManager.K_BOLTZMANN)
 
+        # Ref https://www.tec-science.com/thermodynamics/kinetic-theory-of-gases/mean-free-path-collision-frequency/
+        # Mean Free Path
+        # self.mean_free_path = s_magnitudes["mean_free_path"] = self.cube_vol / (math.sqrt(2) * self.n_bodies * math.pi * math.pow(self.b_radius * 2., 2))
+        self.mean_free_path = s_magnitudes["mean_free_path"] = self.K_BOLTZMANN * self.k_temp / (math.sqrt(2) * s_magnitudes["p_ideal"] * math.pi * math.pow(self.b_radius * 2., 2))
+
+        # Ref https://www.tec-science.com/thermodynamics/kinetic-theory-of-gases/mean-free-path-collision-frequency/
+        # Collision Frequency per unit of volume
+        v_med = math.sqrt(2. * self.k_t / self.n_bodies)
+        s_magnitudes["collision_freq_teoric"] = math.sqrt(2.) * v_med * self.n_bodies / (2 * self.mean_free_path * self.cube_vol)
+        # self.collision_freq = s_magnitudes["collision_freq_calc"] = s_magnitudes["v_rms"] / self.mean_free_path
+
         return s_magnitudes
     
     def get_mb_dist_ideal(self):
         # Ref http://hyperphysics.phy-astr.gsu.edu/hbase/Kinetic/maxspe.html#c4
+        # mass = 1.
         f = lambda v: 4. * math.pi * math.pow(v, 2.) * math.pow(1. / (2 * math.pi * self.K_BOLTZMANN * self.k_temp), 1.5) * math.exp(-1. * math.pow(v, 2.) / (2. * self.K_BOLTZMANN * self.k_temp))
         distribution = []
         distribution.append(np.array([0, 0]))
         for i in range(1, math.ceil(self.max_vel)+1):
+            val = f(i)*self.n_bodies
             distribution.append(np.array([i, f(i)*self.n_bodies]))
+            if val < 0.25:
+                self.max_vel = i
+                break
         # print(distribution) # DEBUG
         return distribution
 

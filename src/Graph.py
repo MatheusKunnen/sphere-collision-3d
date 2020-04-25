@@ -6,15 +6,16 @@ from Queue import Queue
 class Graph:
 
     # General Constansts
-    SCALE_K = 0.98
+    SCALE_K = [0.99, 0.7]
 
-    def __init__(self, title, axes, max_points, g_size, g_pos, title_type = 1):
+    def __init__(self, title, axes, max_points, g_size, g_pos, title_type = 1, g_color = None):
         self.title = title
         self.axes = axes
         self.max_points = max_points
         self.g_size = g_size
         self.g_pos = g_pos
         self.title_type = title_type
+        self.g_color = g_color
         self.points_queue = Queue(self.max_points)
         self.max_v = np.array([0., 0.])
         self.min_v = np.array([0., 0.])
@@ -31,16 +32,17 @@ class Graph:
         self.points_queue.put(point)
 
     # Draw graph
-    def draw(self, g_manager):
+    def draw(self, g_manager, update_scale=True):
         if self.points_queue.is_empty():
             return
-        self.update_edge_values()
-        self.update_scale()
-        g_manager.draw_2d_graph(self.g_pos, self.g_size, self.g_scale, self.min_v, self.points_queue.elements, self.get_caption())
+        if update_scale:
+            self.update_edge_values()
+            self.update_scale()
+        g_manager.draw_2d_graph(self.g_pos, self.g_size, self.g_scale, self.min_v, self.points_queue.elements, self.get_caption(), self.g_color)
 
     # Return graph's caption
     def get_caption(self):
-        return f"{self.title} | {round(self.min_v[0],2)} < {self.axes[0]} < {round(self.max_v[0],2)} | {round(self.min_v[1],2)} < {self.axes[1]} < {round(self.max_v[1],2)}" if self.title_type == 1 else f"{self.title}"
+        return f"{self.title} | {round(self.min_v[0],2)} < {self.axes[0]} < {round(self.max_v[0],2)} | {round(self.min_v[1],2)} < {self.axes[1]} < {round(self.max_v[1],2)}" if self.title_type == 1 else f"{self.title}" 
 
     # Updates min & max values of each axis
     def update_edge_values(self):
@@ -59,7 +61,7 @@ class Graph:
     # Updates scale factor for graph for each axis
     def update_scale(self):
         delta_v = self.max_v - self.min_v
-        self.g_scale[0] = float(self.g_size[0])*Graph.SCALE_K/delta_v[0]
-        self.g_scale[1] = float(self.g_size[1])*Graph.SCALE_K/delta_v[1]
+        self.g_scale[0] = float(self.g_size[0])*Graph.SCALE_K[0]/delta_v[0]
+        self.g_scale[1] = float(self.g_size[1])*Graph.SCALE_K[1]/delta_v[1]
         #print("MAX MIN DELTA SCALE", self.max_v, self.min_v, delta_v, self.g_scale)
 

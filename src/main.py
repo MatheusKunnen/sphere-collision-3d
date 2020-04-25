@@ -61,15 +61,15 @@ class Main:
 
     def init_graphs(self):
         graphs_s = [600, 300]
-        graphs_offset = [20, -self.g_manager.display_size[1] + graphs_s[1] + 20]
+        # graphs_offset = [20, -self.g_manager.display_size[1] + graphs_s[1] + 20]
         n_points = 1000
         n = 1
         self.graph_mb_distrib = Graph("Maxwell-Boltzmann Distribution (n x V)", ["n", "V"], n_points, 
                             np.array(graphs_s), 
                             np.array([20, 20]), 2)
-        self.graph_mb_distrib_ideal = Graph("Maxwell-Boltzmann Distribution (n x V)", ["n", "V"], n_points, 
+        self.graph_mb_distrib_ideal = Graph("", ["n", "V"], n_points, 
                             np.array(graphs_s), 
-                            np.array([20, 20]), 2)
+                            np.array([20, 20]), 2, np.array([0., 1., 0., 10.]))
 
     def run(self):
         self.is_running = self.g_manager.init_display()
@@ -96,11 +96,18 @@ class Main:
             return
         # self.graph_mb_distrib.update_edge_values()
         # self.graph_mb_distrib.update_scale()
-        self.graph_mb_distrib.draw(self.g_manager)
+
+        # self.graph_mb_distrib.draw(self.g_manager)
         # self.graph_mb_distrib_ideal.g_scale = self.graph_mb_distrib.g_scale 
         # self.graph_mb_distrib_ideal.max_v = self.graph_mb_distrib.max_v 
         # self.graph_mb_distrib_ideal.min_v = self.graph_mb_distrib.min_v 
+        # self.graph_mb_distrib_ideal.draw(self.g_manager, False)
+
         self.graph_mb_distrib_ideal.draw(self.g_manager)
+        self.graph_mb_distrib.g_scale = self.graph_mb_distrib_ideal.g_scale 
+        self.graph_mb_distrib.max_v = self.graph_mb_distrib_ideal.max_v 
+        self.graph_mb_distrib.min_v = self.graph_mb_distrib_ideal.min_v 
+        self.graph_mb_distrib.draw(self.g_manager, False)
 
     def update(self):
         self.s_manager.update(self.get_sim_dt())
@@ -108,16 +115,16 @@ class Main:
 
     def update_graphs(self):
         self.s_manager.get_mb_dist()
-        self.graph_mb_distrib.points_queue.set_elements(self.s_manager.get_mb_dist())
         self.graph_mb_distrib_ideal.points_queue.set_elements(self.s_manager.get_mb_dist_ideal())
+        self.graph_mb_distrib.points_queue.set_elements(self.s_manager.get_mb_dist())
 
     def draw_hud(self):
         if not self.hud_enabled:
             return
         txt_status = "Paused" if self.is_paused else "Running"
         magnitudes = self.s_manager.get_simulation_m(self.get_sim_dt())
-        pi = magnitudes["p_ideal"]
-        pc = magnitudes["p_calc"]
+        p_i = magnitudes["p_ideal"]
+        p_c = magnitudes["p_calc"]
         v_med_v = magnitudes["v_med_v"]
         v_med = magnitudes["v_med"]
         v_rms = magnitudes["v_rms"]
@@ -125,6 +132,9 @@ class Main:
         k = magnitudes["k_t"]
         k_med = magnitudes["k_med"]
         temperature = magnitudes["temperature"]
+        mean_free_path = magnitudes["mean_free_path"]
+        collision_freq_teoric = magnitudes["collision_freq_teoric"]
+        collision_freq = (self.s_manager.n_body_body_collisions + self.s_manager.n_wall_collisions)/(self.get_sim_dt()*self.s_manager.cube_vol)
         self.g_manager.captions = [
             "-> General Parameters",
             f"    FPS: {round(1/self.dt,0)} ({round(self.dt*1000, 1)}ms)",
@@ -140,9 +150,12 @@ class Main:
             f"V_rms: {round(v_rms, 3)}",
             f"K_t_v: {np.round(k_v, 3)}",
             f"  K_t: {round(k, 3)} <{round(k_med, 3)}>",
-            f"   Pi: {round(pi, 3)}",
-            f"    P: {round(pc, 3)}",
-            f"Temp.: {round(temperature, 3)}"]
+            f"   Pi: {round(p_i, 3)}",
+            f"    P: {round(p_c, 3)}",
+            f"Temp.: {round(temperature, 3)}",
+            f"  FMP: {round(mean_free_path, 3)}",
+            f"   Ni: {round(collision_freq_teoric, 3)}",
+            f"    N: {round(collision_freq, 3)}"]
 
         self.g_manager.draw_captions()
 

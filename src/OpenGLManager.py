@@ -250,17 +250,7 @@ class OpenGLManager:
         glEnable(GL_LINE_SMOOTH)
         glLineWidth(OpenGLManager.STROKE_W)
 
-        # Draw Graphs points
-        glPushMatrix()
-        glTranslatef(g_pos[0], g_pos[1], 0)
-        glScalef(1, 1, 1)
-        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, g_color)
-        glBegin(GL_LINE_STRIP)
-        for point in g_points:
-            glVertex2d((point[0] - g_min[0])*g_scale[0], (point[1] - g_min[1])*g_scale[1])
-        glEnd()
-        glPopMatrix()
-
+        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, self.text_color)
         # Draw Graph Box
         glPushMatrix()
         glLineWidth(OpenGLManager.STROKE_W*2)
@@ -280,6 +270,17 @@ class OpenGLManager:
         glScalef(0.1, 0.1, 0.1)
         for j in range(len(caption)):
             glutStrokeCharacter(GLUT_STROKE_MONO_ROMAN, ord(caption[j]))
+        glPopMatrix()
+
+        # Draw Graphs points
+        glPushMatrix()
+        glTranslatef(g_pos[0], g_pos[1], 0)
+        glScalef(1, 1, 1)
+        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, g_color)
+        glBegin(GL_LINE_STRIP)
+        for point in g_points:
+            glVertex2d((point[0] - g_min[0])*g_scale[0], (point[1] - g_min[1])*g_scale[1])
+        glEnd()
         glPopMatrix()
 
         """ Making sure we can render 3d again """
