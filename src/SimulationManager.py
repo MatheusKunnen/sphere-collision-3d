@@ -20,17 +20,17 @@ class SimulationManager:
     SPHERE_COLLISION_COLOR = np.array([.1, .01, .01, 1.])
     SPHERE_COLLISION_DIFFUSE_COLOR = np.array([.5, .25, .25, 1.])
 
-    def __init__(self, n_bodies = 1500):
+    def __init__(self, n_bodies = 1000):
         # Ambient Parameters
         self.cube_lenght = SimulationManager.D_CUBE_LENGHT
         self.cube_area = math.pow(self.cube_lenght, 2)
         self.cube_vol = math.pow(self.cube_lenght, 3)
         self.n_bodies = n_bodies
-        self.b_radius = math.pow( 3. * self.cube_lenght**3 * self.D_K / (4. * math.pi * self.n_bodies), 1./3)# math.sqrt(self.D_CUBE_LENGHT**2 /self.n_bodies) * SimulationManager.D_K
+        self.b_radius = math.pow( 3. * self.cube_lenght**3 * self.D_K / (4. * math.pi * self.n_bodies), 1./3)
         self.limit_d = self.D_CUBE_LENGHT/2. - self.b_radius
         self.min_d = self.b_radius * 2.
         self.vel_limits = np.array([-6., 6.])
-        # self.max_vel = self.norm(np.array([self.vel_limits[1], self.vel_limits[1], self.vel_limits[1]]))
+
         # Simulation Variables
         self.n_wall_collisions = 0
         self.n_body_body_collisions = 0
@@ -71,8 +71,6 @@ class SimulationManager:
                     dp[1] *= -1
                     p[2] += dp[2]
             count += 1
-        self.max_vel = math.sqrt(self.max_vel/2.)*.20
-        #print("N BODIES", len(self.bodies_l), "MAX VEL", self.max_vel) # DEBUG
     
     def check_collisions(self):
         # Sort bodies (in the "x" axis) for better performance in collision detection
@@ -98,8 +96,6 @@ class SimulationManager:
                 else:
                     # No more posible collision ("x" axis sorted)
                     break
-            
-            # print(self.n_body_body_collisions) # DEBUG
 
 
     def check_wall_collision(self, body):

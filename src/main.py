@@ -41,7 +41,7 @@ class Main:
         self.spheres_g_enabled = True
         
         # Init Graphics Manager
-        self.g_manager = OpenGLManager("3D Sphere Collision Simulator | Matheus Kunnen ")
+        self.g_manager = OpenGLManager("3D Gas Simulation | Matheus Kunnen ")
         self.move_vector = np.array([0., 0., 0.])
         self.rot_vector = np.array([0., 0., 0.])
         self.cam_pos = np.array([5., 26., -5.])
