@@ -14,23 +14,23 @@ class SimulationManager:
     # General parameters
     D_CUBE_LENGHT = 10.
     D_K = .01
+    VEL_K = 1.5
     MB_ROUND = 0
     SPHERE_NORMAL_COLOR = np.array([.1, .1, .1, 1.])
     SPHERE_NORMAL_DIFFUSE_COLOR = np.array([.5, .5, .5, 1.])
     SPHERE_COLLISION_COLOR = np.array([.1, .01, .01, 1.])
     SPHERE_COLLISION_DIFFUSE_COLOR = np.array([.5, .25, .25, 1.])
 
-    def __init__(self, n_bodies = 1000):
+    def __init__(self, n_bodies = 500):
         # Ambient Parameters
         self.cube_lenght = SimulationManager.D_CUBE_LENGHT
         self.cube_area = math.pow(self.cube_lenght, 2)
         self.cube_vol = math.pow(self.cube_lenght, 3)
-        self.n_bodies = n_bodies
+        self.n_bodies = float(n_bodies)
         self.b_radius = math.pow( 3. * self.cube_lenght**3 * self.D_K / (4. * math.pi * self.n_bodies), 1./3)
         self.limit_d = self.D_CUBE_LENGHT/2. - self.b_radius
         self.min_d = self.b_radius * 2.
-        self.vel_limits = np.array([-6., 6.])
-
+        self.vel_limits = np.array([-self.cube_lenght*self.VEL_K, self.cube_lenght*self.VEL_K])
         # Simulation Variables
         self.n_wall_collisions = 0
         self.n_body_body_collisions = 0
@@ -38,6 +38,7 @@ class SimulationManager:
         self.dp_wall_bodies = 0.
         self.k_t = 0
         self.max_vel = 0.
+        self.v_med = 0.
         self.k_temp = 0.
         self.init_bodies()
     
@@ -179,7 +180,7 @@ class SimulationManager:
 
         # Ref http://hyperphysics.phy-astr.gsu.edu/hbase/Kinetic/eqpar.html#c1
         # Temperature
-        self.k_temp = s_magnitudes["temperature"] = s_magnitudes["k_med"] * 2 / (3*SimulationManager.K_BOLTZMANN)
+        self.k_temp = s_magnitudes["kinetic_temperature"] = s_magnitudes["k_med"] * 2 / (3*SimulationManager.K_BOLTZMANN)
 
         # Ref https://www.tec-science.com/thermodynamics/kinetic-theory-of-gases/mean-free-path-collision-frequency/
         # Mean Free Path
@@ -188,8 +189,8 @@ class SimulationManager:
 
         # Ref https://www.tec-science.com/thermodynamics/kinetic-theory-of-gases/mean-free-path-collision-frequency/
         # Collision Frequency per unit of volume
-        v_med = math.sqrt(2. * self.k_t / self.n_bodies)
-        s_magnitudes["collision_freq_teoric"] = math.sqrt(2.) * v_med * self.n_bodies / (2 * self.mean_free_path * self.cube_vol)
+        self.v_med = math.sqrt(2. * self.k_t / self.n_bodies)
+        s_magnitudes["collision_freq_teoric"] = math.sqrt(2.) * self.v_med * self.n_bodies / (2 * self.mean_free_path * self.cube_vol)
         # self.collision_freq = s_magnitudes["collision_freq_calc"] = s_magnitudes["v_rms"] / self.mean_free_path
 
         return s_magnitudes
@@ -200,12 +201,16 @@ class SimulationManager:
         f = lambda v: 4. * math.pi * math.pow(v, 2.) * math.pow(1. / (2 * math.pi * self.K_BOLTZMANN * self.k_temp), 1.5) * math.exp(-1. * math.pow(v, 2.) / (2. * self.K_BOLTZMANN * self.k_temp))
         distribution = []
         distribution.append(np.array([0, 0]))
+
+        top_passed = False
         for i in range(1, math.ceil(self.max_vel)+1):
             val = f(i)*self.n_bodies
             distribution.append(np.array([i, f(i)*self.n_bodies]))
-            if val < 0.25:
+            if val < 0.05 and i > self.vel_limits[1]:
                 self.max_vel = i
                 break
+            elif val >= self.n_bodies*.05:
+                top_passed = True
         # print(distribution) # DEBUG
         return distribution
 

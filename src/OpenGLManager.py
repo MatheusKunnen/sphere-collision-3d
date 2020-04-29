@@ -2,6 +2,7 @@
 
 import math
 import numpy as np
+from sys import platform
 
 import pygame
 from pygame.locals import *
@@ -14,7 +15,7 @@ from OpenGL.GLUT import *
 class OpenGLManager:
     """ General parameters """
     display_size = (1600, 800)  # Tamanho da janela a abrir
-    sphere_slices = 4           # Divisioes das bolas (> -> Maior Qualidade)
+    sphere_slices = 9           # Divisioes das bolas (> -> Maior Qualidade)
     text_pos = (10, 750)        # Posicao inicial do texto
     text_dP = 175               # Distancia entre linhas do texto
     D_RENDER_DISTANCE = 100     # Distancia maxima de renderizado
@@ -46,7 +47,7 @@ class OpenGLManager:
     sphere_diffuse_color = [.01, .01, .01, 1.]
     sphere_ambient_color = [.1, .1, .1, .1]             # Cor da esfera
     # Cor da reflexão da esfera
-    sphere_specular_color = [.01, .01, .01, 1.1]
+    sphere_specular_color = [.2, .2, .2, 1.]
     sphere_collision_diffuse_color = [1., .0, 0., 1.]   # Cor das bolas
     sphere_collision_ambient_color = [.5, .0,
                                       0., .1]   # Cor ambiente? das bolas
@@ -72,7 +73,11 @@ class OpenGLManager:
             self.display_size, pygame.DOUBLEBUF | HWSURFACE |OPENGL)
         pygame.display.set_caption(self.display_title)
         pygame.display.gl_set_attribute(GL_ACCELERATED_VISUAL, True)
-        glutInit()
+
+        # Only needed in linux
+        if platform == "linux" or platform == "linux2":
+            glutInit()
+            
         # Config window
         glClearColor(self.bg_color[0], self.bg_color[1],
                      self.bg_color[2], self.bg_color[3])

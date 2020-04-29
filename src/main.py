@@ -4,6 +4,7 @@
 import numpy as np
 import time
 import math
+from sys import argv
 
 import pygame
 from pygame.locals import *
@@ -27,7 +28,7 @@ class Main:
     cube_lenght = 10. # Cube lenght
     bodies_l = []     # Bodies list
 
-    def __init__(self):
+    def __init__(self, n_bodies = 500):
         # Init General Parameters
         self.is_running = False
         self.is_paused = True
@@ -50,7 +51,7 @@ class Main:
         self.g_manager.cam_rot = self.cam_rot
 
         # Init Collision Manager & Bodies
-        self.s_manager = SimulationManager()
+        self.s_manager = SimulationManager(n_bodies)
 
         # Init Graphs
         self.init_graphs()
@@ -94,19 +95,13 @@ class Main:
     def draw_graphs(self):
         if not self.graphs_enabled:
             return
-        # self.graph_mb_distrib.update_edge_values()
-        # self.graph_mb_distrib.update_scale()
-
-        # self.graph_mb_distrib.draw(self.g_manager)
-        # self.graph_mb_distrib_ideal.g_scale = self.graph_mb_distrib.g_scale 
-        # self.graph_mb_distrib_ideal.max_v = self.graph_mb_distrib.max_v 
-        # self.graph_mb_distrib_ideal.min_v = self.graph_mb_distrib.min_v 
-        # self.graph_mb_distrib_ideal.draw(self.g_manager, False)
-
+        # Draw teoric Maxwell-Boltzmann graph
         self.graph_mb_distrib_ideal.draw(self.g_manager)
+        # Equal the scales of both graphs
         self.graph_mb_distrib.g_scale = self.graph_mb_distrib_ideal.g_scale 
         self.graph_mb_distrib.max_v = self.graph_mb_distrib_ideal.max_v 
         self.graph_mb_distrib.min_v = self.graph_mb_distrib_ideal.min_v 
+        # Draw histogram of Maxwell-Boltzmann graph 
         self.graph_mb_distrib.draw(self.g_manager, False)
 
     def update(self):
@@ -121,6 +116,7 @@ class Main:
     def draw_hud(self):
         if not self.hud_enabled:
             return
+        # Calculating values
         txt_status = "Paused" if self.is_paused else "Running"
         magnitudes = self.s_manager.get_simulation_m(self.get_sim_dt())
         p_i = magnitudes["p_ideal"]
@@ -131,15 +127,16 @@ class Main:
         k_v = magnitudes["k_t_axes"]
         k = magnitudes["k_t"]
         k_med = magnitudes["k_med"]
-        temperature = magnitudes["temperature"]
+        temperature = magnitudes["kinetic_temperature"]
         mean_free_path = magnitudes["mean_free_path"]
         collision_freq_teoric = magnitudes["collision_freq_teoric"]
-        collision_freq = (self.s_manager.n_body_body_collisions + self.s_manager.n_wall_collisions)/(self.get_sim_dt()*self.s_manager.cube_vol)
+        collision_freq = (self.s_manager.n_body_body_collisions)/(self.get_sim_dt()*self.s_manager.cube_vol)
+        # Creating list of captions
         self.g_manager.captions = [
             "-> General Parameters",
             f"    FPS: {round(1/self.dt,0)} ({round(self.dt*1000, 1)}ms)",
             f"Runtime: {round(self.t_total, 3)}s.",
-            f"   Play: x{round(self.dt_k,1)}",
+            f"   Play: x{round(self.dt_k,1)} ({int(self.get_sim_dt()*1000)}ms)",
             f"Cam. dP: {np.round(self.cam_pos, 2)}",
             f"Cam. dR: {np.round(self.cam_rot, 2)}",
             f" Status: {txt_status}", "",
@@ -156,7 +153,7 @@ class Main:
             f"  FMP: {round(mean_free_path, 3)}",
             f"   Ni: {round(collision_freq_teoric, 3)}",
             f"    N: {round(collision_freq, 3)}"]
-
+        # Draw captions
         self.g_manager.draw_captions()
 
     def update_dt(self, t1, t2):
@@ -209,7 +206,6 @@ class Main:
                 elif event.key == pygame.K_r and event.type == pygame.KEYDOWN:
                     self.spheres_g_enabled = not self.spheres_g_enabled
             if event.type == pygame.QUIT:
-                #is_running = False
                 pygame.quit()
                 quit()
         self.cam_pos = [self.cam_pos[0] + self.move_vector[0], self.cam_pos[1] +
@@ -220,7 +216,13 @@ class Main:
         self.g_manager.rotate_cam(self.rot_vector)
 
 if __name__ == "__main__":
-    main = Main()
+    n_bodies = None
+    # Check arguments
+    if len(argv) > 1:
+        n_bodies = argv[1] if argv[1] != 0 else None
+        main = Main(n_bodies)
+    else :
+        main = Main()
     main.run()
 
 exit()
